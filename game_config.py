@@ -1,0 +1,8 @@
+# game_config.py
+
+# Dimensiones de la pantalla
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
+
+# Fotogramas por segundo
+FPS = 60
