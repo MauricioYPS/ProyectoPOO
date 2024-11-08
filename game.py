@@ -53,11 +53,12 @@ class Game:
         pygame.display.flip()  # Actualiza la pantalla
 
     def run(self):
-     while self.running:
-        self.handle_events()
-        self.update()
-        self.render()
-        self.display_chat_log()  # Mostrar log de chat
-        self.clock.tick(60)
-    pygame.quit()
+        while self.running:
+            self.handle_events()
+            self.update()
+            self.render()
+            self.display_chat_log()  # Mostrar log de chat
+            self.clock.tick(60)
+        pygame.quit()
+
 
