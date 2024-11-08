@@ -5,10 +5,11 @@ import os
 import random
 from .tile import Tile
 from item.item import Item
+from enemy.enemy import Enemy  # Importar la clase Enemy
 
 class Map:
     def __init__(self, width=3840, height=2160, tile_size=32):
-        """Inicializa el mapa con tiles de diferentes tipos y añade objetos coleccionables."""
+        """Inicializa el mapa con tiles de diferentes tipos y añade objetos y enemigos."""
         self.width = width
         self.height = height
         self.tile_size = tile_size
@@ -31,6 +32,14 @@ class Map:
             self.item_image = pygame.image.load(os.path.join(assets_path, "item.png"))
         except pygame.error as e:
             print(f"Error al cargar la imagen del objeto: {e}")
+            pygame.quit()
+            exit()
+
+        # Cargar imagen del enemigo
+        try:
+            self.enemy_image = pygame.image.load(os.path.join(assets_path, "enemy.png"))
+        except pygame.error as e:
+            print(f"Error al cargar la imagen del enemigo: {e}")
             pygame.quit()
             exit()
 
@@ -63,6 +72,10 @@ class Map:
         self.last_collected_item_id = None  # Para almacenar el ID del último objeto recogido
         self.spawn_items()
 
+        # Añadir enemigos al mapa
+        self.enemies = []
+        self.spawn_enemies()
+
     def generate_map_layout(self):
         """Genera el diseño del mapa."""
         num_rows = self.height // self.tile_size
@@ -90,6 +103,43 @@ class Map:
                     item = Item(x, y, self.item_image)
                     self.items.append(item)
                     break
+
+    def set_item_positions(self, item_positions):
+        """Configura los objetos coleccionables con las posiciones proporcionadas."""
+        self.items = []
+        for item_data in item_positions:
+            item = Item(item_data['x'], item_data['y'], self.item_image)
+            item.id = item_data['id']
+            item.collected = item_data['collected']
+            self.items.append(item)
+
+    def get_item_positions(self):
+        """Devuelve las posiciones y estados de los objetos coleccionables."""
+        item_positions = []
+        for item in self.items:
+            item_positions.append({
+                'id': item.id,
+                'x': item.x,
+                'y': item.y,
+                'collected': item.collected
+            })
+        return item_positions
+
+    def spawn_enemies(self):
+        """Genera enemigos en posiciones aleatorias transitables."""
+        for _ in range(5):  # Añade 5 enemigos al mapa
+            while True:
+                x = random.randint(0, self.width - self.tile_size)
+                y = random.randint(0, self.height - self.tile_size)
+                if self.is_walkable(x, y):
+                    enemy = Enemy(x, y, self.enemy_image)
+                    self.enemies.append(enemy)
+                    break
+
+    def update_enemies(self, delta_time, players, other_players_positions):
+        """Actualiza el movimiento de los enemigos con IA."""
+        for enemy in self.enemies:
+            enemy.move_towards_player(self, delta_time, players, other_players_positions)
 
     def draw(self, screen, player_position, screen_size):
         """Dibuja el mapa y los objetos en la pantalla, centrado en la posición del jugador."""
@@ -126,6 +176,8 @@ class Map:
         for item in self.items:
             item.draw(screen, offset_x, offset_y)
 
+        # Los enemigos se dibujan desde main.py, por lo que no es necesario dibujarlos aquí
+
     def is_walkable(self, x, y):
         """Devuelve True si el tile en la posición (x, y) es transitable."""
         tile_x = int(x // self.tile_size)
@@ -151,3 +203,24 @@ class Map:
             if item.id == item_id:
                 item.collect()
                 break
+
+    def get_enemy_states(self):
+        """Devuelve el estado actual de todos los enemigos."""
+        enemy_states = []
+        for enemy in self.enemies:
+            enemy_states.append({
+                'id': enemy.id,
+                'x': enemy.x,
+                'y': enemy.y,
+                'direction': enemy.direction
+            })
+        return enemy_states
+
+    def set_enemy_states(self, enemy_states):
+        """Actualiza el estado de los enemigos según los datos proporcionados."""
+        self.enemies = []
+        for state in enemy_states:
+            enemy = Enemy(state['x'], state['y'], self.enemy_image)
+            enemy.id = state['id']
+            enemy.direction = state['direction']
+            self.enemies.append(enemy)
