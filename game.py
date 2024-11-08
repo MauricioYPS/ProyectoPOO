@@ -24,13 +24,22 @@ class Game:
         self.running = True  # Controla el bucle del juego
 
     def handle_events(self):
-        # Manejo de eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                elif event.key == pygame.K_RETURN:  # Enviar mensaje con Enter
+                    message = input("Enter message: ")  # Pedir el mensaje
+                    self.chat.send_message(message)  # Enviar mensaje
+                
+    def display_chat_log(self): 
+        # Muestra el log de chat en consola (temporalmente)
+        for message in self.chat.chat_log[-5:]:  # Mostrar últimos 5 mensajes
+            print(message)
+                
+                
 
     def update(self):
         # Actualizar lógica del juego (jugador, mapa, etc.)
@@ -43,11 +52,11 @@ class Game:
         pygame.display.flip()  # Actualiza la pantalla
 
     def run(self):
-        # Bucle principal del juego
-        while self.running:
-            self.handle_events()  # Maneja eventos
-            self.update()         # Actualiza el estado del juego
-            self.render()         # Renderiza el juego
-            self.clock.tick(60)   # Controla la velocidad del bucle (FPS)
+     while self.running:
+        self.handle_events()
+        self.update()
+        self.render()
+        self.display_chat_log()  # Mostrar log de chat
+        self.clock.tick(60)
+    pygame.quit()
 
-        pygame.quit()
