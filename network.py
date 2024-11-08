@@ -35,6 +35,9 @@ class Chat:
     def __init__(self, network):
         self.network = network
         self.chat_log = []  # Log de mensajes de chat
+        
+        # Lanzar el hilo para escuchar mensajes
+        threading.Thread(target=self.listen_for_messages, daemon=True).start()
 
     def send_message(self, message, recipient=None):
         data = {"type": "chat", "message": message, "recipient": recipient}
@@ -46,3 +49,4 @@ class Chat:
             if data and data.get("type") == "chat":
                 self.chat_log.append(data["message"])
                 print("Chat message received:", data["message"])
+

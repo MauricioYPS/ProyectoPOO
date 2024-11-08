@@ -33,7 +33,7 @@ class Server:
             self.clients.remove(conn)
 
     def broadcast(self, data, sender_conn):
-        # Enviar datos a todos los clientes, excepto el remitente
+    # Enviar datos a todos los clientes, excepto al remitente
         for client in self.clients:
             if client != sender_conn:
                 try:

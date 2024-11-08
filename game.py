@@ -13,7 +13,8 @@ class Game:
 
         # Inicialización de la red y el chat
         self.network = Network(server_ip, port)
-        self.chat = Chat(self.network)
+        self.chat = Chat(self.network)  # Pasamos self.network al chat
+        self.running = True
         
         # Jugador y mapa
         self.player = Player()  # Inicializa el jugador
