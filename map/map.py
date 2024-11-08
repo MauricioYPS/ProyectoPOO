@@ -5,7 +5,7 @@ import os
 from .tile import Tile
 
 class Map:
-    def __init__(self, width, height, tile_size=32):
+    def __init__(self, width=3840, height=2160, tile_size=32):
         """Inicializa el mapa con tiles de diferentes tipos."""
         self.width = width
         self.height = height
@@ -24,25 +24,40 @@ class Map:
             pygame.quit()
             exit()
 
-        # Crear una cuadrícula de tiles con un patrón más lógico
-        self.tiles = []
-        for y in range(0, self.height, tile_size):
-            row = []
-            for x in range(0, self.width, tile_size):
-                # Crear un diseño lógico: bordes de paredes y un área central con césped y obstáculos de agua
-                if x < tile_size * 3 or x >= self.width - tile_size * 3 or y < tile_size * 3 or y >= self.height - tile_size * 3:
-                    tile_type = "wall"
-                    walkable = False
-                elif (x // tile_size) % 5 == 0 and (y // tile_size) % 5 == 0:
-                    tile_type = "water"
-                    walkable = False
-                else:
-                    tile_type = "grass"
-                    walkable = True
+        # Definir un diseño estático para el mapa utilizando una matriz más grande
+        # 'W' = Wall, 'G' = Grass, 'A' = Water
+        self.map_layout = [
+            ['W'] * 40,  # Fila superior con muro completo
+            ['W'] + ['G'] * 38 + ['W'],  # Segunda fila con césped rodeado de muro
+            ['W'] + ['G'] * 15 + ['A'] * 8 + ['G'] * 15 + ['W'],  # Fila con césped, agua y césped
+            ['W'] + ['G'] * 38 + ['W'],  # Fila con césped
+            ['W'] + ['G'] * 38 + ['W'],  # Fila con césped
+            ['W'] + ['W'] * 38 + ['W'],  # Fila con muro completo
+        ] * 8 + [  # Repetir 8 veces para aumentar el tamaño vertical del mapa
+            ['W'] + ['G'] * 38 + ['W'],  # Parte inferior con césped
+            ['W'] * 40  # Fila inferior con muro completo
+        ]
 
-                tile = Tile(tile_type, walkable, image=self.tile_images[tile_type])
-                row.append(tile)
-            self.tiles.append(row)
+        # Crear una cuadrícula de tiles basándonos en el diseño estático del mapa
+        self.tiles = []
+        for row_index, row in enumerate(self.map_layout):
+            tile_row = []
+            for col_index, tile_type in enumerate(row):
+                if tile_type == 'W':
+                    walkable = False
+                    image = self.tile_images['wall']
+                elif tile_type == 'G':
+                    walkable = True
+                    image = self.tile_images['grass']
+                elif tile_type == 'A':
+                    walkable = False
+                    image = self.tile_images['water']
+                else:
+                    raise ValueError(f"Tipo de tile desconocido: {tile_type}")
+
+                tile = Tile(tile_type, walkable, image)
+                tile_row.append(tile)
+            self.tiles.append(tile_row)
 
     def draw(self, screen, player_position, screen_size):
         """Dibuja el mapa en la pantalla, centrado en la posición del jugador."""
