@@ -16,7 +16,7 @@ def main():
     game_map = Map(width=2000, height=2000)
     player = Player(x=config.SCREEN_WIDTH // 2, y=config.SCREEN_HEIGHT // 2)
     client = GameClient()
-    client.connect_to_server()
+    client.connect_to_server()  # Conecta el cliente al servidor
 
     running = True
     while running:
@@ -37,8 +37,8 @@ def main():
 
         # Dibujar al jugador en el centro de la pantalla
         player_rect = pygame.Rect(
-            config.SCREEN_WIDTH // 2 - player.width // 2,
-            config.SCREEN_HEIGHT // 2 - player.height // 2,
+            int(config.SCREEN_WIDTH // 2 - player.width // 2),
+            int(config.SCREEN_HEIGHT // 2 - player.height // 2),
             player.width, player.height
         )
         pygame.draw.rect(screen, (255, 0, 0), player_rect)  # Jugador propio (rojo)
@@ -46,8 +46,8 @@ def main():
         # Dibujar el otro jugador
         other_position = client.get_other_player_position()
         other_rect = pygame.Rect(
-            other_position[0] - player.width // 2 - (player.x - config.SCREEN_WIDTH // 2),
-            other_position[1] - player.height // 2 - (player.y - config.SCREEN_HEIGHT // 2),
+            int(other_position[0] - player.width // 2 - (player.x - config.SCREEN_WIDTH // 2)),
+            int(other_position[1] - player.height // 2 - (player.y - config.SCREEN_HEIGHT // 2)),
             player.width, player.height
         )
         pygame.draw.rect(screen, (0, 0, 255), other_rect)  # Otro jugador (azul)

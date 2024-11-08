@@ -4,7 +4,7 @@ import socket
 import threading
 
 class GameServer:
-    def __init__(self, host='localhost', port=5555):
+    def __init__(self, host='192.168.1.5', port=5555):
         self.host = host
         self.port = port
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,23 +24,28 @@ class GameServer:
 
     def handle_client(self, conn):
         """Maneja los mensajes recibidos de cada jugador."""
-        while True:
-            try:
+        try:
+            while True:
                 data = conn.recv(1024)
                 if not data:
+                    print("Sin datos recibidos. Cerrando conexión.")
                     break
                 self.broadcast(data, conn)  # Reenvía datos a todos los demás jugadores
-            except ConnectionResetError:
-                break
-        conn.close()
-        self.connections.remove(conn)
-        print("Conexión cerrada.")
+        except ConnectionResetError:
+            print("Error: El cliente cerró la conexión de forma inesperada.")
+        finally:
+            conn.close()
+            self.connections.remove(conn)
+            print("Conexión cerrada.")
 
     def broadcast(self, data, sender_conn):
         """Envía datos a todos los jugadores excepto al remitente."""
         for conn in self.connections:
             if conn != sender_conn:
-                conn.sendall(data)
+                try:
+                    conn.sendall(data)
+                except BrokenPipeError:
+                    print("Error: No se pudo enviar datos al cliente.")
 
 if __name__ == "__main__":
     server = GameServer()
