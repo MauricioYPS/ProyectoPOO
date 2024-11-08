@@ -34,8 +34,7 @@ class Map:
             pygame.quit()
             exit()
 
-        # Definir el diseño del mapa (puedes modificarlo según tus necesidades)
-        # 'W' = Wall, 'G' = Grass, 'A' = Water
+        # Definir el diseño del mapa
         self.map_layout = self.generate_map_layout()
 
         # Crear una cuadrícula de tiles basándonos en el diseño estático del mapa
@@ -61,6 +60,7 @@ class Map:
 
         # Añadir objetos coleccionables al mapa
         self.items = []
+        self.last_collected_item_id = None  # Para almacenar el ID del último objeto recogido
         self.spawn_items()
 
     def generate_map_layout(self):
@@ -68,7 +68,7 @@ class Map:
         num_rows = self.height // self.tile_size
         num_cols = self.width // self.tile_size
 
-        # Crear un borde de muros alrededor del mapa
+        # Crear un mapa básico con bordes de muros y césped en el interior
         map_layout = []
         for y in range(num_rows):
             row = []
@@ -141,5 +141,13 @@ class Map:
         for item in self.items:
             if not item.collected and player_rect.colliderect(item.rect):
                 item.collect()
+                self.last_collected_item_id = item.id  # Almacenar el ID del objeto recogido
                 return True  # Retorna True si se recogió un objeto
         return False
+
+    def collect_item_by_id(self, item_id):
+        """Marca un objeto como recogido por su ID."""
+        for item in self.items:
+            if item.id == item_id:
+                item.collect()
+                break

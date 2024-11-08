@@ -17,7 +17,7 @@ class GameServer:
         self.server_socket.listen(2)  # Permitimos hasta 2 conexiones (2 jugadores)
         print("Servidor iniciado, esperando conexiones...")
 
-        while len(self.connections) < 2:
+        while True:
             conn, addr = self.server_socket.accept()
             player_id = self.next_player_id
             self.next_player_id += 1
@@ -52,8 +52,9 @@ class GameServer:
                 continue
             data_parts = message.split(',')
             if data_parts[0] == "POS":
-                # Reenviar la posición al otro jugador
-                self.broadcast(data, sender_conn)
+                # Añadir el ID del remitente al mensaje antes de reenviarlo
+                new_message = f"POS,{sender_id},{data_parts[1]},{data_parts[2]}\n"
+                self.broadcast(new_message.encode(), sender_conn)
             elif data_parts[0] == "CHAT":
                 recipient = data_parts[1]
                 chat_message = ','.join(data_parts[2:])

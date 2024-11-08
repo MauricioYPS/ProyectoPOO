@@ -13,6 +13,8 @@ class GameClient:
         self.other_player_position = (0.0, 0.0)  # Posición del otro jugador como flotante
         self.chat_messages = []  # Lista de mensajes de chat [(mensaje, tiempo)]
         self.player_id = None  # ID del jugador asignado por el servidor
+        self.other_player_id = None  # ID del otro jugador
+        self.received_events = []  # Lista de eventos recibidos del otro jugador
 
     def connect_to_server(self):
         """Conecta al cliente al servidor."""
@@ -61,20 +63,44 @@ class GameClient:
         """Procesa los datos recibidos del servidor."""
         data_parts = data.split(',')
         if data_parts[0] == "POS":
-            # Actualiza la posición del otro jugador usando valores flotantes
+            # Datos de posición de otro jugador
             try:
-                self.other_player_position = (float(data_parts[1]), float(data_parts[2]))
+                sender_id = int(data_parts[1])
+                x = float(data_parts[2])
+                y = float(data_parts[3])
+
+                if sender_id != self.player_id:
+                    self.other_player_position = (x, y)
+                    self.other_player_id = sender_id
+                    # Registrar el evento de movimiento del otro jugador
+                    self.received_events.append({
+                        'type': 'movement',
+                        'time': time.time(),
+                        'player_id': sender_id,
+                        'data': {'position': (x, y)}
+                    })
             except ValueError:
                 print(f"Error al convertir los datos recibidos: {data}")
         elif data_parts[0] == "CHAT":
-            # Verificar si el mensaje es para este jugador o es global
-            sender_id = data_parts[1]
+            # Mensaje de chat recibido
+            sender_id = int(data_parts[1])
             recipient = data_parts[2]
             chat_message = ",".join(data_parts[3:])
             if recipient == 'Global' or recipient == f'Jugador {self.player_id}':
                 # Almacenar el mensaje de chat con la marca de tiempo actual
-                self.chat_messages.append((f"{sender_id}: {chat_message}", time.time()))
+                self.chat_messages.append((f"Jugador {sender_id}: {chat_message}", time.time()))
                 print(f"Mensaje recibido: {chat_message}")
+                # Registrar el evento de chat del otro jugador
+                if sender_id != self.player_id:
+                    self.received_events.append({
+                        'type': 'chat',
+                        'time': time.time(),
+                        'player_id': sender_id,
+                        'data': {
+                            'recipient': recipient,
+                            'message': chat_message
+                        }
+                    })
         elif data_parts[0] == "ID":
             # Asignar el ID del jugador
             self.player_id = int(data_parts[1])
@@ -90,6 +116,18 @@ class GameClient:
     def get_other_player_position(self):
         """Devuelve la posición del otro jugador."""
         return self.other_player_position
+
+    def get_other_player_id(self):
+        """Devuelve el ID del otro jugador."""
+        return self.other_player_id
+
+    def get_received_events(self):
+        """Devuelve los eventos recibidos del otro jugador."""
+        return self.received_events.copy()
+
+    def clear_received_events(self):
+        """Limpia los eventos recibidos."""
+        self.received_events.clear()
 
 if __name__ == "__main__":
     client = GameClient()
