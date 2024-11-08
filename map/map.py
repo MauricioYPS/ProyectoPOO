@@ -1,7 +1,6 @@
 # map/map.py
 
 import pygame
-import random
 import os
 from .tile import Tile
 
@@ -25,14 +24,22 @@ class Map:
             pygame.quit()
             exit()
 
-        # Crear una cuadrícula de tiles
+        # Crear una cuadrícula de tiles con un patrón más lógico
         self.tiles = []
         for y in range(0, self.height, tile_size):
             row = []
             for x in range(0, self.width, tile_size):
-                # Selecciona un tipo de tile al azar para cada posición (para efectos de prueba)
-                tile_type = random.choice(["grass", "water", "wall"])
-                walkable = tile_type != "water"
+                # Crear un diseño lógico: bordes de paredes y un área central con césped y obstáculos de agua
+                if x < tile_size * 3 or x >= self.width - tile_size * 3 or y < tile_size * 3 or y >= self.height - tile_size * 3:
+                    tile_type = "wall"
+                    walkable = False
+                elif (x // tile_size) % 5 == 0 and (y // tile_size) % 5 == 0:
+                    tile_type = "water"
+                    walkable = False
+                else:
+                    tile_type = "grass"
+                    walkable = True
+
                 tile = Tile(tile_type, walkable, image=self.tile_images[tile_type])
                 row.append(tile)
             self.tiles.append(row)
