@@ -35,7 +35,7 @@ class Chat:
     def __init__(self, network):
         self.network = network
         self.chat_log = []  # Log de mensajes de chat
-        
+
         # Lanzar el hilo para escuchar mensajes
         threading.Thread(target=self.listen_for_messages, daemon=True).start()
 
@@ -43,10 +43,18 @@ class Chat:
         data = {"type": "chat", "message": message, "recipient": recipient}
         self.network.send(data)
 
+# En el archivo network.py, en la clase Chat
     def listen_for_messages(self):
         while True:
             data = self.network.receive()
             if data and data.get("type") == "chat":
                 self.chat_log.append(data["message"])
                 print("Chat message received:", data["message"])
+
+                # Envía confirmación al servidor de que el mensaje ha sido recibido
+                self.network.client.sendall("received".encode("utf-8"))
+
+
+
+
 
