@@ -2,11 +2,13 @@
 
 import pygame
 import os
+import random
 from .tile import Tile
+from item.item import Item
 
 class Map:
     def __init__(self, width=3840, height=2160, tile_size=32):
-        """Inicializa el mapa con tiles de diferentes tipos."""
+        """Inicializa el mapa con tiles de diferentes tipos y añade objetos coleccionables."""
         self.width = width
         self.height = height
         self.tile_size = tile_size
@@ -24,19 +26,17 @@ class Map:
             pygame.quit()
             exit()
 
-        # Definir un diseño estático para el mapa utilizando una matriz más grande
+        # Cargar imagen del objeto
+        try:
+            self.item_image = pygame.image.load(os.path.join(assets_path, "item.png"))
+        except pygame.error as e:
+            print(f"Error al cargar la imagen del objeto: {e}")
+            pygame.quit()
+            exit()
+
+        # Definir el diseño del mapa (puedes modificarlo según tus necesidades)
         # 'W' = Wall, 'G' = Grass, 'A' = Water
-        self.map_layout = [
-            ['W'] * 40,  # Fila superior con muro completo
-            ['W'] + ['G'] * 38 + ['W'],  # Segunda fila con césped rodeado de muro
-            ['W'] + ['G'] * 15 + ['A'] * 8 + ['G'] * 15 + ['W'],  # Fila con césped, agua y césped
-            ['W'] + ['G'] * 38 + ['W'],  # Fila con césped
-            ['W'] + ['G'] * 38 + ['W'],  # Fila con césped
-            ['W'] + ['W'] * 38 + ['W'],  # Fila con muro completo
-        ] * 8 + [  # Repetir 8 veces para aumentar el tamaño vertical del mapa
-            ['W'] + ['G'] * 38 + ['W'],  # Parte inferior con césped
-            ['W'] * 40  # Fila inferior con muro completo
-        ]
+        self.map_layout = self.generate_map_layout()
 
         # Crear una cuadrícula de tiles basándonos en el diseño estático del mapa
         self.tiles = []
@@ -59,8 +59,40 @@ class Map:
                 tile_row.append(tile)
             self.tiles.append(tile_row)
 
+        # Añadir objetos coleccionables al mapa
+        self.items = []
+        self.spawn_items()
+
+    def generate_map_layout(self):
+        """Genera el diseño del mapa."""
+        num_rows = self.height // self.tile_size
+        num_cols = self.width // self.tile_size
+
+        # Crear un borde de muros alrededor del mapa
+        map_layout = []
+        for y in range(num_rows):
+            row = []
+            for x in range(num_cols):
+                if x == 0 or x == num_cols -1 or y == 0 or y == num_rows -1:
+                    row.append('W')  # Muro en los bordes
+                else:
+                    row.append('G')  # Césped en el interior
+            map_layout.append(row)
+        return map_layout
+
+    def spawn_items(self):
+        """Genera objetos coleccionables en posiciones aleatorias transitables."""
+        for _ in range(20):  # Añade 20 objetos al mapa
+            while True:
+                x = random.randint(0, self.width - self.tile_size)
+                y = random.randint(0, self.height - self.tile_size)
+                if self.is_walkable(x, y):
+                    item = Item(x, y, self.item_image)
+                    self.items.append(item)
+                    break
+
     def draw(self, screen, player_position, screen_size):
-        """Dibuja el mapa en la pantalla, centrado en la posición del jugador."""
+        """Dibuja el mapa y los objetos en la pantalla, centrado en la posición del jugador."""
 
         # Calcula el desplazamiento necesario para centrar el jugador en pantalla
         offset_x = int(player_position[0] - screen_size[0] // 2)
@@ -90,6 +122,10 @@ class Map:
                     color = (34, 139, 34) if tile.tile_type == "grass" else (0, 0, 255) if tile.tile_type == "water" else (139, 69, 19)
                     pygame.draw.rect(screen, color, (tile_x, tile_y, self.tile_size, self.tile_size))
 
+        # Dibuja los objetos
+        for item in self.items:
+            item.draw(screen, offset_x, offset_y)
+
     def is_walkable(self, x, y):
         """Devuelve True si el tile en la posición (x, y) es transitable."""
         tile_x = int(x // self.tile_size)
@@ -98,4 +134,12 @@ class Map:
         # Comprobar que la posición está dentro de los límites del mapa
         if 0 <= tile_x < len(self.tiles[0]) and 0 <= tile_y < len(self.tiles):
             return self.tiles[tile_y][tile_x].walkable
+        return False
+
+    def check_item_collision(self, player_rect):
+        """Verifica si el jugador ha recogido algún objeto."""
+        for item in self.items:
+            if not item.collected and player_rect.colliderect(item.rect):
+                item.collect()
+                return True  # Retorna True si se recogió un objeto
         return False
