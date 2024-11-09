@@ -15,8 +15,8 @@ def main():
     clock = pygame.time.Clock()
 
     # Crear el mapa, el cliente y el jugador
-    game_map = Map(width=3840, height=2160)
-    player = Player(x=5 * game_map.tile_size, y=5 * game_map.tile_size)
+    game_map = Map(tile_size=32)
+    player = Player(x=1 * game_map.tile_size, y=1 * game_map.tile_size)
     client = GameClient()
     client.connect_to_server()  # Conecta el cliente al servidor
 
@@ -190,25 +190,16 @@ def main():
         game_map.draw(screen, (player.x, player.y), (config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
 
         # Dibujar al jugador en el centro de la pantalla
-        player_screen_rect = pygame.Rect(
-            int(config.SCREEN_WIDTH // 2 - player.width // 2),
-            int(config.SCREEN_HEIGHT // 2 - player.height // 2),
-            player.width, player.height
-        )
-        # Cambiar el color del jugador si está invencible
-        if invincible:
-            pygame.draw.rect(screen, (255, 255, 0), player_screen_rect)  # Amarillo si está invencible
-        else:
-            pygame.draw.rect(screen, (255, 0, 0), player_screen_rect)  # Rojo
+        player_screen_x = int(config.SCREEN_WIDTH // 2 - player.width // 2)
+        player_screen_y = int(config.SCREEN_HEIGHT // 2 - player.height // 2)
+        screen.blit(player.image, (player_screen_x, player_screen_y))
+        
 
         # Dibujar el otro jugador
         if other_player_id is not None:
-            other_rect = pygame.Rect(
-                int(other_position[0] - player.x + config.SCREEN_WIDTH // 2 - player.width // 2),
-                int(other_position[1] - player.y + config.SCREEN_HEIGHT // 2 - player.height // 2),
-                player.width, player.height
-            )
-            pygame.draw.rect(screen, (0, 0, 255), other_rect)  # Otro jugador (azul)
+            other_screen_x = int(other_position[0] - player.x + config.SCREEN_WIDTH // 2 - player.width // 2)
+            other_screen_y = int(other_position[1] - player.y + config.SCREEN_HEIGHT // 2 - player.height // 2)
+            screen.blit(player.image, (other_screen_x, other_screen_y))
 
         # Dibujar enemigos
         offset_x = int(player.x - config.SCREEN_WIDTH // 2)
@@ -286,7 +277,7 @@ def replay_game(replay_file):
     clock = pygame.time.Clock()
 
     # Cargar el mapa y otros recursos
-    game_map = Map(width=3840, height=2160)
+    game_map = Map(tile_size=32)
     font = pygame.font.Font(None, 24)
     player = Player(x=0, y=0)  # Necesario para acceder a player.width y player.height
 
@@ -391,7 +382,7 @@ def replay_game(replay_file):
                 player.width, player.height
             )
             color = (255, 0, 0) if player_id == main_player_id else (0, 0, 255)
-            pygame.draw.rect(screen, color, player_rect)
+            screen.blit(player.image, player_rect.topleft)
 
             # Dibujar la salud y puntuación del jugador
             if player_id in player_health:
@@ -423,11 +414,11 @@ def replay_game(replay_file):
     pygame.quit()
 
 if __name__ == "__main__":
-        mode = input("Selecciona el modo: (1) Jugar partida, (2) Reproducir replay\n")
-        if mode == '1':
-            main()
-        elif mode == '2':
-            replay_file = input("Ingresa el nombre del archivo de replay (ejemplo: replay_20230101_123456.json):\n")
-            replay_game(replay_file)
-        else:
-            print("Opción inválida")
+    mode = input("Selecciona el modo: (1) Jugar partida, (2) Reproducir replay\n")
+    if mode == '1':
+        main()
+    elif mode == '2':
+        replay_file = input("Ingresa el nombre del archivo de replay (ejemplo: replay_20230101_123456.json):\n")
+        replay_game(replay_file)
+    else:
+        print("Opción inválida")
