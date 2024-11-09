@@ -13,11 +13,13 @@ class Enemy:
         self.image = image
         self.rect = self.image.get_rect(topleft=(self.x, self.y))
         self.speed = speed  # Velocidad en píxeles por segundo
-        self.direction = random.choice(['up', 'down', 'left', 'right'])
         self.width = self.image.get_width()
         self.height = self.image.get_height()
         self.id = Enemy.next_id  # Asignar un ID único al enemigo
         Enemy.next_id += 1
+
+        # Definir el atributo 'direction'
+        self.direction = random.choice(['up', 'down', 'left', 'right'])
 
     def move_towards_player(self, game_map, delta_time, players, other_players_positions):
         """Mueve al enemigo hacia el jugador más cercano."""
@@ -44,6 +46,12 @@ class Enemy:
         # Calcular movimiento
         move_x = (dx / distance) * self.speed * delta_time
         move_y = (dy / distance) * self.speed * delta_time
+
+        # Actualizar la dirección según el movimiento
+        if abs(move_x) > abs(move_y):
+            self.direction = 'right' if move_x > 0 else 'left'
+        else:
+            self.direction = 'down' if move_y > 0 else 'up'
 
         # Verificar colisiones con el mapa
         new_x = self.x + move_x
