@@ -1,19 +1,22 @@
 import pygame
 from map.map import Map
 from player.player import Player
+from network.client import GameClient  # Asegúrate de que el cliente esté en la carpeta network
 import game_config as config
-from weapon.weapon import Weapon
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-    pygame.display.set_caption("2D Game with Shooting")
+    pygame.display.set_caption("Label Shooter")
     clock = pygame.time.Clock()
 
-    # Crear el mapa y el jugador
+    # Crear el mapa, el jugador y el cliente
     game_map = Map(tile_size=32)
     player = Player(x=100, y=100)
-    font = pygame.font.Font(None, 24)  # Fuente para el HUD
+    client = GameClient(host="192.168.1.5", port=12345)
+    client.connect_to_server()
+
+    font = pygame.font.Font(None, 24)
 
     running = True
     while running:
@@ -28,8 +31,6 @@ def main():
                     target_x = mouse_x + player.x - config.SCREEN_WIDTH // 2
                     target_y = mouse_y + player.y - config.SCREEN_HEIGHT // 2
                     player.shoot(target_x, target_y)
-                    print(f"Disparo hacia: ({target_x}, {target_y})")  # Depuración
-
 
         # Actualizar la posición del jugador
         player.handle_input(game_map, delta_time)
@@ -46,19 +47,16 @@ def main():
         # Verificar colisiones con ítems
         collected_item = game_map.check_item_collision(player_rect)
         if collected_item:
-            print(f"Ítem recogido: {collected_item}")  # Depuración
-            player.pick_up_weapon(collected_item)
-
-        if player.current_weapon is None:
-            print("Arma no equipada después de recoger un ítem.")
-
-
+            player.pick_up_weapon(collected_item)  # Recoger el arma o ítem
 
         # Actualizar enemigos
         game_map.update_enemies(delta_time, player)
 
         # Actualizar balas del jugador
         player.update_bullets(delta_time, game_map)
+
+        # Enviar la posición del jugador al servidor
+        client.send_position(player.x, player.y)
 
         # Dibujar todo en pantalla
         screen.fill((0, 0, 0))  # Fondo negro
@@ -69,8 +67,18 @@ def main():
         player_screen_y = int(config.SCREEN_HEIGHT // 2 - player.height // 2)
         screen.blit(player.image, (player_screen_x, player_screen_y))
 
+        # Dibujar las posiciones de otros jugadores
+        for other_id, other_data in client.other_players.items():
+            if other_id == str(client.client_socket.getsockname()[1]):  # Omitir al jugador actual
+                continue
+
+            other_screen_x = int(other_data["x"] - player.x + config.SCREEN_WIDTH // 2 - player.width // 2)
+            other_screen_y = int(other_data["y"] - player.y + config.SCREEN_HEIGHT // 2 - player.height // 2)
+            pygame.draw.rect(screen, (0, 0, 255), (other_screen_x, other_screen_y, player.width, player.height))
+
         # Dibujar las balas activas
         player.draw_bullets(screen, player.x - config.SCREEN_WIDTH // 2, player.y - config.SCREEN_HEIGHT // 2)
+
         # Dibujar la salud del jugador
         health_surface = font.render(f"Salud: {player.health}", True, (255, 255, 255))
         screen.blit(health_surface, (10, 10))
@@ -87,8 +95,6 @@ def main():
             screen.blit(game_over_surface, (config.SCREEN_WIDTH // 2 - 50, config.SCREEN_HEIGHT // 2))
             pygame.display.flip()
             pygame.time.wait(2000)
-            
-        
 
         # Actualizar la pantalla
         pygame.display.flip()

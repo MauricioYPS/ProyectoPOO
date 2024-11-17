@@ -1,56 +1,67 @@
 import socket
 import threading
+import json
 
-# Configuración del servidor
-HOST = "192.168.1.5"
-PORT = 65432
+class GameServer:
+    def __init__(self, host="192.168.1.5", port=12345):
+        self.host = host
+        self.port = port
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.clients = {}  # Diccionario para almacenar clientes y sus posiciones
+        self.lock = threading.Lock()
 
-# Diccionario para rastrear clientes y sus identificadores
-clients = {}
-client_counter = 1
+    def handle_client(self, client_socket, client_address):
+        client_id = client_address[1]
+        print(f"Cliente conectado: {client_id}")
 
-# Función para manejar cada cliente
-def handle_client(conn, addr):
-    global client_counter
-    client_id = f"Cliente {client_counter}"
-    client_counter += 1
+        # Inicializar la posición del cliente
+        with self.lock:
+            self.clients[client_id] = {"x": 0, "y": 0}
 
-    print(f"[NUEVA CONEXIÓN] {client_id} conectado desde {addr}")
-    clients[conn] = client_id
+        try:
+            while True:
+                data = client_socket.recv(1024)
+                if not data:
+                    break
 
-    try:
+                # Decodificar el mensaje
+                message = json.loads(data.decode())
+
+                # Si es una actualización de posición
+                if message["type"] == "position":
+                    with self.lock:
+                        self.clients[client_id]["x"] = message["x"]
+                        self.clients[client_id]["y"] = message["y"]
+
+                # Enviar actualizaciones a todos los clientes
+                self.broadcast_positions()
+        except (ConnectionResetError, json.JSONDecodeError):
+            print(f"Cliente desconectado: {client_id}")
+        finally:
+            with self.lock:
+                if client_id in self.clients:
+                    del self.clients[client_id]
+            client_socket.close()
+
+    def broadcast_positions(self):
+        with self.lock:
+            positions = json.dumps({"type": "positions", "data": self.clients})
+            for client_socket in self.clients.values():
+                try:
+                    client_socket.sendall(positions.encode())
+                except:
+                    pass
+
+    def start(self):
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen()
+        print(f"Servidor iniciado en {self.host}:{self.port}")
+
         while True:
-            msg = conn.recv(1024).decode("utf-8")
-            if not msg:
-                break
-            print(f"[{client_id}] {msg}")
-            broadcast(f"[{client_id}] {msg}", conn)
-    except ConnectionResetError:
-        print(f"[DESCONECTADO] {client_id} se desconectó abruptamente.")
-    finally:
-        conn.close()
-        del clients[conn]
-        print(f"[DESCONECTADO] {client_id} desconectado.")
-
-# Función para enviar mensajes a todos los clientes
-def broadcast(msg, sender_conn):
-    for client_conn in clients.keys():
-        if client_conn != sender_conn:
-            client_conn.send(msg.encode("utf-8"))
-
-# Iniciar el servidor
-def start_server():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((HOST, PORT))
-    server.listen()
-    print(f"[ESCUCHANDO] Servidor en {HOST}:{PORT}")
-
-    while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-        print(f"[CONEXIONES ACTIVAS] {threading.active_count() - 1}")
+            client_socket, client_address = self.server_socket.accept()
+            thread = threading.Thread(target=self.handle_client, args=(client_socket, client_address))
+            thread.start()
 
 if __name__ == "__main__":
-    print("[INICIANDO] Servidor en inicio...")
-    start_server()
+    server = GameServer()
+    server.start()
