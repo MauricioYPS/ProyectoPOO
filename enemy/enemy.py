@@ -1,81 +1,63 @@
-# enemy/enemy.py
-
+from game_object import GameObject
 import pygame
-import random
-import math
 
-class Enemy:
-    next_id = 1  # Variable de clase para asignar IDs únicos a los enemigos
+class Enemy(GameObject):
+    """
+    Clase que representa a un enemigo.
+    """
+    def __init__(self, x, y, width=32, height=32, speed=50, health=50, image=None):
+        super().__init__(x, y, width, height, image)
+        self.speed = speed  # Velocidad reducida para enemigos
+        self.health = health  # Vida inicial del enemigo
+        self.image = pygame.Surface((width, height))  # Representación básica
+        self.image.fill((0, 0, 255))  # Azul para distinguir a los enemigos
+        self.rect = pygame.Rect(x, y, width, height)  # Rectángulo para colisiones
 
-    def __init__(self, x, y, image, speed=100):
-        self.x = x
-        self.y = y
-        self.image = image
-        self.rect = self.image.get_rect(topleft=(self.x, self.y))
-        self.speed = speed  # Velocidad en píxeles por segundo
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.id = Enemy.next_id  # Asignar un ID único al enemigo
-        Enemy.next_id += 1
+    def move_towards_player(self, player, game_map, delta_time):
+        """
+        Movimiento básico hacia el jugador, respetando colisiones con paredes.
+        """
+        direction_x = player.x - self.x
+        direction_y = player.y - self.y
+        distance = (direction_x**2 + direction_y**2)**0.5
 
-        # Definir el atributo 'direction'
-        self.direction = random.choice(['up', 'down', 'left', 'right'])
+        if distance > 0:
+            direction_x /= distance
+            direction_y /= distance
 
-    def move_towards_player(self, game_map, delta_time, players, other_players_positions):
-        """Mueve al enemigo hacia el jugador más cercano."""
-        # Lista de posiciones de jugadores
-        player_positions = [ (player.x, player.y) for player in players ]
-        # Añadir posiciones de otros jugadores
-        for pos in other_players_positions:
-            if pos is not None:
-                player_positions.append(pos)
-
-        if not player_positions:
-            return  # No hay jugadores, no se mueve
-
-        # Encontrar al jugador más cercano
-        closest_player_pos = min(player_positions, key=lambda pos: self.distance_to(pos))
-
-        dx = closest_player_pos[0] - self.x
-        dy = closest_player_pos[1] - self.y
-        distance = math.hypot(dx, dy)
-
-        if distance == 0:
-            return  # Ya está en la posición del jugador
-
-        # Calcular movimiento
-        move_x = (dx / distance) * self.speed * delta_time
-        move_y = (dy / distance) * self.speed * delta_time
-
-        # Actualizar la dirección según el movimiento
-        if abs(move_x) > abs(move_y):
-            self.direction = 'right' if move_x > 0 else 'left'
-        else:
-            self.direction = 'down' if move_y > 0 else 'up'
+        new_x = self.x + direction_x * self.speed * delta_time
+        new_y = self.y + direction_y * self.speed * delta_time
 
         # Verificar colisiones con el mapa
-        new_x = self.x + move_x
-        new_y = self.y + move_y
-
-        if game_map.is_walkable(new_x, new_y):
+        if game_map.is_walkable(new_x, self.y):
             self.x = new_x
+        if game_map.is_walkable(self.x, new_y):
             self.y = new_y
-        else:
-            # Cambiar de dirección al chocar
-            self.change_direction()
 
+        # Actualizar el rectángulo
         self.rect.topleft = (self.x, self.y)
 
-    def distance_to(self, position):
-        """Calcula la distancia al punto dado."""
-        dx = position[0] - self.x
-        dy = position[1] - self.y
-        return math.hypot(dx, dy)
-
-    def change_direction(self):
-        """Cambia la dirección del enemigo aleatoriamente."""
-        self.direction = random.choice(['up', 'down', 'left', 'right'])
+    def receive_damage(self, amount):
+        """
+        Reduce la vida del enemigo.
+        """
+        self.health -= amount
+        if self.health <= 0:
+            return True  # El enemigo está muerto
+        return False
 
     def draw(self, screen, offset_x, offset_y):
-        """Dibuja al enemigo en la pantalla con el desplazamiento dado."""
+        """
+        Dibuja al enemigo en la pantalla y su barra de vida.
+        """
+        # Dibuja al enemigo
         screen.blit(self.image, (self.x - offset_x, self.y - offset_y))
+
+        # Dibuja la barra de vida sobre el enemigo
+        life_percentage = max(self.health / 50, 0)  # Vida máxima = 50
+        bar_width = self.width
+        bar_height = 5
+        bar_x = self.x - offset_x
+        bar_y = self.y - offset_y - bar_height - 2  # Justo encima del enemigo
+        pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))  # Barra roja completa
+        pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, bar_width * life_percentage, bar_height))  # Barra verde proporcional

@@ -1,20 +1,17 @@
-# item/item.py
-
+from game_object import GameObject
 import pygame
-import uuid
 
-class Item:
-    def __init__(self, x, y, image):
-        self.id = str(uuid.uuid4())
-        self.x = x
-        self.y = y
-        self.image = image
-        self.collected = False
-        self.rect = self.image.get_rect(topleft=(self.x, self.y))
-
-    def collect(self):
-        self.collected = True
-
-    def draw(self, screen, offset_x, offset_y):
-        if not self.collected:
-            screen.blit(self.image, (self.x - offset_x, self.y - offset_y))
+class Item(GameObject):
+    """
+    Clase base para objetos coleccionables.
+    """
+    def __init__(self, x, y, width=32, height=32, item_type="generic", image=None):
+        super().__init__(x, y, width, height, image)
+        self.item_type = item_type  # Tipo de ítem (e.g., weapon, health, etc.)
+        self.image = pygame.Surface((width, height))  # Representación básica
+        if item_type == "weapon":
+            self.image.fill((0, 255, 0))  # Verde para armas
+        elif item_type == "health":
+            self.image.fill((255, 0, 0))  # Rojo para salud
+        else:
+            self.image.fill((200, 200, 200))  # Gris para genéricos
