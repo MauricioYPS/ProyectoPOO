@@ -27,7 +27,7 @@ MAP_HEIGHT = len(level_map) * TILE_SIZE
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Castillo Laberinto - Sistema de Inventario Mejorado")
+pygame.display.set_caption("Laberinto en el casitllo")
 
 # Colores
 WHITE = (255, 255, 255)
