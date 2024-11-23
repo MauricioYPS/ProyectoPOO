@@ -9,7 +9,7 @@ import random
 import os
 import sys
 
-import pygame  # Necesario para usar pygame.Rect en el servidor
+import pygame  
 from map.level1 import level_map
 from entities.enemy import PatrollingEnemy, RandomEnemy, AggressiveEnemy, StationaryEnemy  # Importar clases de enemigos
 

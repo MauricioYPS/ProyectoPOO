@@ -5,7 +5,7 @@ import pickle
 import threading
 
 # Configuración del cliente
-SERVER_HOST = "192.168.1.5"  # Cambia esto a la IP del servidor
+SERVER_HOST = "172.17.235.189"  # Cambia esto a la IP del servidor
 SERVER_PORT = 5555
 
 # Estructura para almacenar datos compartidos

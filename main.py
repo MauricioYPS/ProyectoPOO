@@ -705,7 +705,6 @@ while running:
                         damage_enemy_sound.play()  # Reproducir sonido de daño al enemigo
                         if enemies[target_id].health <= 0:
                             del enemies[target_id]
-                            # Puedes agregar efectos visuales de muerte del enemigo aquí
                     elif damage_type == 'player' and target_id == client_data.player_id:
                         if player:
                             player.receive_damage(amount)

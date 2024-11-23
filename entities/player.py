@@ -54,7 +54,7 @@ class Player(Entity):
         # Ataque cuerpo a cuerpo o con arma
         damage = 25
         if self.weapon and self.weapon.type == 'weapon':
-            damage = self.weapon.effect  # Suponemos que el efecto es el daño
+            damage = self.weapon.effect 
         for enemy_id, enemy in enemies.items():
             dx = enemy.rect.centerx - self.rect.centerx
             dy = enemy.rect.centery - self.rect.centery

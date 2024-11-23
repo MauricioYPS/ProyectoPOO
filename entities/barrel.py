@@ -55,5 +55,5 @@ class Barrel(Entity):
         if not self.is_broken:
             surface.blit(self.image, (self.rect.x - camera_x, self.rect.y - camera_y))
         else:
-            # Opcional: Mostrar una animación de barril roto
+            # Opcional
             pass
